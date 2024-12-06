@@ -1,25 +1,35 @@
 const Blockchain = require("./blockchain");
 const Transaction = require("./transaction");
-const { proofOfWork, proofOfStake } = require("./consensus");
-const Node = require("./network");
+const { Node, Network } = require("./network");
+const Wallet = require("./wallet");
 
-const myBlockchain = new Blockchain();
+const blockchain = new Blockchain();
+const network = new Network();
 
-// Add transactions
-myBlockchain.addTransaction(new Transaction("Alice", "Bob", 50));
-myBlockchain.addTransaction(new Transaction("Bob", "Charlie", 30));
+console.log("Initializing blockchain...");
 
-// Mine pending transactions
-console.log("Mining block...");
-myBlockchain.minePendingTransactions("Miner1");
+// Create wallets
+const wallet1 = new Wallet();
+const wallet2 = new Wallet();
+console.log("Wallet 1:", wallet1.publicKey);
+console.log("Wallet 2:", wallet2.publicKey);
 
-// Verify blockchain
-console.log("Is blockchain valid?", myBlockchain.isChainValid());
+// Add a transaction
+const tx = new Transaction(wallet1.publicKey, wallet2.publicKey, 100);
+blockchain.addTransaction(tx);
 
-// Simulate Proof of Stake
-const nodes = [
-  new Node("Node1", 5),
-  new Node("Node2", 15),
-  new Node("Node3", 10)
-];
-console.log("Selected node for PoS:", proofOfStake(nodes).id);
+// Mine transactions
+blockchain.minePendingTransactions(wallet1.publicKey);
+
+// Display the blockchain
+console.log(JSON.stringify(blockchain, null, 2));
+
+// Add nodes to the network
+const node1 = new Node("Node1", 10);
+const node2 = new Node("Node2", 20);
+
+network.addNode(node1);
+network.addNode(node2);
+
+// Broadcast the blockchain to all nodes
+network.broadcast(blockchain);

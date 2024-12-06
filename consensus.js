@@ -7,7 +7,6 @@ function proofOfWork(block, difficulty) {
   }
   
   function proofOfStake(nodes) {
-    // Simplified PoS: Select node based on "stake"
     const totalStake = nodes.reduce((sum, node) => sum + node.stake, 0);
     const random = Math.random() * totalStake;
     let cumulative = 0;

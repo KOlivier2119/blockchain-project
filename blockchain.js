@@ -6,8 +6,8 @@ class Block {
     this.timestamp = timestamp;
     this.transactions = transactions;
     this.previousHash = previousHash;
-    this.nonce = 0;
     this.hash = this.calculateHash();
+    this.nonce = 0;
   }
 
   calculateHash() {
@@ -30,11 +30,13 @@ class Block {
 }
 
 class Blockchain {
-  constructor() {
+  constructor(consensus = "PoW") {
     this.chain = [this.createGenesisBlock()];
-    this.difficulty = 2;
+    this.difficulty = 2; // For PoW
     this.pendingTransactions = [];
-    this.miningReward = 100;
+    this.miningReward = 50;
+    this.consensus = consensus;
+    this.nodes = []; // Store registered nodes
   }
 
   createGenesisBlock() {
@@ -56,16 +58,19 @@ class Blockchain {
     const rewardTx = { from: null, to: minerAddress, amount: this.miningReward };
     this.pendingTransactions.push(rewardTx);
 
-    const newBlock = new Block(
+    const block = new Block(
       this.chain.length,
       Date.now(),
       this.pendingTransactions,
       this.getLatestBlock().hash
     );
-    newBlock.mineBlock(this.difficulty);
+
+    if (this.consensus === "PoW") {
+      block.mineBlock(this.difficulty);
+    }
 
     console.log("Block successfully mined!");
-    this.chain.push(newBlock);
+    this.chain.push(block);
     this.pendingTransactions = [];
   }
 
@@ -83,6 +88,19 @@ class Blockchain {
       }
     }
     return true;
+  }
+
+  getBalance(address) {
+    let balance = 0;
+
+    for (const block of this.chain) {
+      for (const tx of block.transactions) {
+        if (tx.to === address) balance += tx.amount;
+        if (tx.from === address) balance -= tx.amount;
+      }
+    }
+
+    return balance;
   }
 }
 

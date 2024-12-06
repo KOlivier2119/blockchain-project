@@ -1,22 +1,24 @@
 const CryptoJS = require("crypto-js");
 
 function generateKeyPair() {
-  // Simplified: Use a library like `elliptic` for real implementations
+  // Simplified key generation; replace with elliptic library for real usage
+  const key = CryptoJS.SHA256(Math.random().toString()).toString();
   return {
-    publicKey: "Public Key Placeholder",
-    privateKey: "Private Key Placeholder"
+    publicKey: `pub_${key}`,
+    privateKey: `priv_${key}`,
   };
 }
 
 function signTransaction(transaction, privateKey) {
   const hash = CryptoJS.SHA256(JSON.stringify(transaction)).toString();
-  // Sign with privateKey (stub for simplicity)
-  return `Signed(${hash})`;
+  return CryptoJS.HmacSHA256(hash, privateKey).toString();
 }
 
 function verifySignature(transaction, signature, publicKey) {
-  // Verify with publicKey (stub for simplicity)
-  return signature.startsWith("Signed");
+  // Verification simplified for this example
+  const hash = CryptoJS.SHA256(JSON.stringify(transaction)).toString();
+  const expectedSig = CryptoJS.HmacSHA256(hash, publicKey.replace("pub_", "priv_")).toString();
+  return expectedSig === signature;
 }
 
 module.exports = { generateKeyPair, signTransaction, verifySignature };
