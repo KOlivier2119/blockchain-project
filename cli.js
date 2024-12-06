@@ -1,76 +1,132 @@
-const Blockchain = require("./blockchain");
-const Transaction = require("./transaction");
 const readline = require("readline");
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-const blockchain = new Blockchain();
-
-function menu() {
-  console.log("\n=== Blockchain Menu ===");
-  console.log("1. Add a transaction");
-  console.log("2. Mine pending transactions");
-  console.log("3. Check wallet balance");
-  console.log("4. Validate blockchain");
-  console.log("5. Display blockchain");
-  console.log("6. Exit");
-  rl.question("Enter your choice: ", (choice) => {
-    handleMenu(choice);
+function createCLI(blockchain, network, wallets) {
+  const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
   });
-}
 
-function handleMenu(choice) {
-  switch (choice) {
-    case "1":
-      rl.question("From address: ", (from) => {
-        rl.question("To address: ", (to) => {
-          rl.question("Amount: ", (amount) => {
-            blockchain.addTransaction(new Transaction(from, to, parseFloat(amount)));
-            console.log("Transaction added!");
-            menu();
+  // Helper to display menu options
+  function displayMenu() {
+    console.log("\n=== Blockchain Menu ===");
+    console.log("1. Create a new wallet");
+    console.log("2. Add a transaction");
+    console.log("3. Mine pending transactions");
+    console.log("4. Check wallet balance");
+    console.log("5. Validate blockchain");
+    console.log("6. Display blockchain");
+    console.log("7. Add a node to the network");
+    console.log("8. Broadcast blockchain to network");
+    console.log("9. Exit");
+    rl.question("\nEnter your choice: ", (choice) => {
+      handleMenu(parseInt(choice));
+    });
+  }
+
+  // Handle menu options
+  function handleMenu(choice) {
+    switch (choice) {
+      case 1: // Create a new wallet
+        const wallet = new Wallet();
+        wallets.push(wallet);
+        console.log(`New wallet created!\nPublic Key: ${wallet.publicKey}`);
+        displayMenu();
+        break;
+
+      case 2: // Add a transaction
+        if (wallets.length < 2) {
+          console.log("At least two wallets are required to perform transactions.");
+          displayMenu();
+          return;
+        }
+        rl.question("Sender wallet index: ", (fromIndex) => {
+          rl.question("Recipient wallet index: ", (toIndex) => {
+            rl.question("Amount: ", (amount) => {
+              try {
+                const tx = new (require("./transaction"))(
+                  wallets[fromIndex].publicKey,
+                  wallets[toIndex].publicKey,
+                  parseFloat(amount)
+                );
+                blockchain.addTransaction(tx);
+                console.log("Transaction added!");
+              } catch (error) {
+                console.log("Error adding transaction:", error.message);
+              }
+              displayMenu();
+            });
           });
         });
-      });
-      break;
+        break;
 
-    case "2":
-      rl.question("Enter miner address: ", (miner) => {
-        blockchain.minePendingTransactions(miner);
-        console.log("Mining complete!");
-        menu();
-      });
-      break;
+      case 3: // Mine pending transactions
+        rl.question("Enter miner wallet index: ", (minerIndex) => {
+          if (!wallets[minerIndex]) {
+            console.log("Invalid wallet index.");
+            displayMenu();
+            return;
+          }
+          blockchain.minePendingTransactions(wallets[minerIndex].publicKey);
+          console.log("Mining complete!");
+          displayMenu();
+        });
+        break;
 
-    case "3":
-      rl.question("Enter wallet address: ", (address) => {
-        const balance = blockchain.getBalance(address);
-        console.log(`Balance: ${balance}`);
-        menu();
-      });
-      break;
+      case 4: // Check wallet balance
+        rl.question("Enter wallet index: ", (walletIndex) => {
+          if (!wallets[walletIndex]) {
+            console.log("Invalid wallet index.");
+            displayMenu();
+            return;
+          }
+          const balance = blockchain.getBalance(wallets[walletIndex].publicKey);
+          console.log(`Wallet balance: ${balance}`);
+          displayMenu();
+        });
+        break;
 
-    case "4":
-      console.log("Is blockchain valid? ", blockchain.isChainValid());
-      menu();
-      break;
+      case 5: // Validate blockchain
+        console.log("Is blockchain valid? ", blockchain.isChainValid());
+        displayMenu();
+        break;
 
-    case "5":
-      console.log(JSON.stringify(blockchain, null, 2));
-      menu();
-      break;
+      case 6: // Display blockchain
+        console.log("\nBlockchain:");
+        console.log(JSON.stringify(blockchain, null, 2));
+        displayMenu();
+        break;
 
-    case "6":
-      rl.close();
-      break;
+      case 7: // Add a node to the network
+        rl.question("Enter node ID: ", (nodeId) => {
+          rl.question("Enter node stake: ", (stake) => {
+            const node = new Node(nodeId, parseFloat(stake));
+            network.addNode(node);
+            console.log(`Node ${nodeId} added to the network.`);
+            displayMenu();
+          });
+        });
+        break;
 
-    default:
-      console.log("Invalid choice! Try again.");
-      menu();
-      break;
+      case 8: // Broadcast blockchain to the network
+        network.broadcast(blockchain);
+        console.log("Blockchain broadcasted to all nodes.");
+        displayMenu();
+        break;
+
+      case 9: // Exit
+        console.log("Exiting the blockchain CLI. Goodbye!");
+        rl.close();
+        break;
+
+      default:
+        console.log("Invalid choice! Please try again.");
+        displayMenu();
+        break;
+    }
   }
+
+  // Start displaying the menu
+  displayMenu();
 }
 
-menu();
+module.exports = createCLI;
