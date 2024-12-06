@@ -1,4 +1,5 @@
 const readline = require("readline");
+const Wallet = require("./wallet");  // <-- Add this line to import Wallet class
 
 function createCLI(blockchain, network, wallets) {
   const rl = readline.createInterface({
@@ -99,7 +100,7 @@ function createCLI(blockchain, network, wallets) {
       case 7: // Add a node to the network
         rl.question("Enter node ID: ", (nodeId) => {
           rl.question("Enter node stake: ", (stake) => {
-            const node = new Node(nodeId, parseFloat(stake));
+            const node = new (require("./network").Node)(nodeId, parseFloat(stake));
             network.addNode(node);
             console.log(`Node ${nodeId} added to the network.`);
             displayMenu();
